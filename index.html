@@ -1,0 +1,1591 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>체육 움직임 측정 실험실 - 오렌지보드 + 자이로센서</title>
+<style>
+:root{--or:#ff7a00;--or2:#fff4e8;--bg:#f5f6fa;--fg:#1f2937;--sub:#6b7280;--bd:#e5e7eb;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;--blue:#2563eb}
+*{box-sizing:border-box}
+body{margin:0;font-family:"Pretendard","Malgun Gothic","Apple SD Gothic Neo",sans-serif;background:var(--bg);color:var(--fg);font-size:14px}
+header{background:var(--or);color:#fff;padding:12px 20px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px}
+header h1{margin:0;font-size:20px}
+header .subt{font-size:12px;opacity:.9}
+.status{display:flex;align-items:center;gap:8px;background:rgba(255,255,255,.18);padding:6px 12px;border-radius:8px;font-weight:600}
+.dot{width:12px;height:12px;border-radius:50%;background:#d1d5db;border:2px solid #fff}
+.dot.ok{background:#22c55e}.dot.warn{background:#facc15}.dot.bad{background:#ef4444}.dot.demo{background:#a78bfa}.dot.conn{background:#60a5fa}
+.tabs{display:flex;gap:2px;background:#fff;border-bottom:1px solid var(--bd);padding:0 16px;overflow-x:auto}
+.tab{padding:12px 16px;cursor:pointer;border-bottom:3px solid transparent;font-weight:700;white-space:nowrap;color:var(--sub)}
+.tab.active{border-color:var(--or);color:var(--or)}
+main{padding:16px;max-width:1320px;margin:0 auto}
+.page{display:none}.page.active{display:block}
+.grid{display:grid;grid-template-columns:350px 1fr;gap:16px;align-items:start}
+@media(max-width:960px){.grid{grid-template-columns:1fr}}
+.card{background:#fff;border:1px solid var(--bd);border-radius:10px;padding:14px;margin-bottom:16px}
+.card h2{font-size:15px;margin:0 0 10px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.card h2 .num{display:inline-block;background:var(--or);color:#fff;border-radius:6px;padding:0 7px;margin-right:6px}
+button{font-family:inherit;font-size:14px;padding:9px 13px;border-radius:8px;border:1px solid var(--bd);background:#fff;cursor:pointer;font-weight:700;color:var(--fg)}
+button:hover{filter:brightness(.96)}
+button.primary{background:var(--or);color:#fff;border-color:var(--or)}
+button.green{background:var(--ok);color:#fff;border-color:var(--ok)}
+button.red{background:var(--bad);color:#fff;border-color:var(--bad)}
+button.blue{background:var(--blue);color:#fff;border-color:var(--blue)}
+button.sm{padding:5px 9px;font-size:12px}
+button:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row+.row{margin-top:8px}
+label.ck{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--sub);cursor:pointer}
+input[type=text],input[type=number],select{font-family:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--bd);border-radius:8px;width:100%}
+.fld{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.fld>div label{display:block;font-size:12px;color:var(--sub);margin-bottom:3px}
+.fld .full{grid-column:1/3}
+.log{height:110px;overflow:auto;background:#111827;color:#d1d5db;font-family:Consolas,monospace;font-size:11px;border-radius:8px;padding:6px;margin-top:10px}
+.log .l-e{color:#fca5a5}.log .l-w{color:#fde68a}.log .l-o{color:#86efac}
+.timer{font-size:56px;font-weight:800;text-align:center;font-variant-numeric:tabular-nums;color:var(--or);line-height:1.1}
+.timer small{font-size:18px;color:var(--sub)}
+.prog{height:10px;background:#f1f2f5;border-radius:6px;overflow:hidden;margin:8px 0 12px}
+.prog>div{height:100%;width:0;background:var(--or);transition:width .1s linear}
+.bigbtn{flex:1;padding:14px;font-size:17px}
+.live{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.live div{background:#f8f9fb;border:1px solid var(--bd);border-radius:8px;padding:6px 8px}
+.live b{display:block;font-size:16px;font-variant-numeric:tabular-nums}
+.live span{font-size:11px;color:var(--sub)}
+.live .hl{background:var(--or2);border-color:#fed7aa}
+.chartwrap{position:relative;height:250px;margin-bottom:8px}
+.chartwrap.g{height:210px}
+canvas.chart{width:100%;height:100%;display:block;touch-action:none;cursor:crosshair;border:1px solid var(--bd);border-radius:8px}
+.mode{font-size:12px;padding:3px 8px;border-radius:6px;background:#eef2ff;color:var(--blue);font-weight:700}
+.mode.rec{background:#fee2e2;color:var(--bad)}
+.mode.res{background:#dcfce7;color:var(--ok)}
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mc{border:1px solid var(--bd);border-radius:8px;padding:10px}
+.mc .k{font-size:12px;color:var(--sub)}
+.mc .v{font-size:26px;font-weight:800;font-variant-numeric:tabular-nums}
+.mc .v small{font-size:13px;color:var(--sub);font-weight:600;margin-left:2px}
+.mc .d{font-size:11px;color:var(--sub)}
+.mc.main{border-color:var(--or);background:var(--or2)}
+.ibar{display:flex;height:22px;border-radius:6px;overflow:hidden;margin:6px 0}
+.ibar div{color:#fff;font-size:11px;display:flex;align-items:center;justify-content:center;font-weight:700;overflow:hidden;white-space:nowrap}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:12px;color:var(--sub)}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+table.t{width:100%;border-collapse:collapse;font-size:13px}
+table.t th,table.t td{border-bottom:1px solid var(--bd);padding:7px 6px;text-align:left}
+table.t th{background:#f8f9fb;font-size:12px;color:var(--sub)}
+table.t td.n,table.t th.n{text-align:right;font-variant-numeric:tabular-nums}
+.sbar{height:8px;background:var(--or);border-radius:4px;min-width:2px}
+.badge{display:inline-block;padding:2px 7px;border-radius:5px;font-size:11px;font-weight:700;color:#fff}
+.fb{background:#f8f9fb;border-left:4px solid var(--or);padding:10px 12px;border-radius:6px;margin-top:10px;line-height:1.6}
+.rank1{background:#fff7ed}.rank2{background:#f8fafc}.rank3{background:#fdf4ff}
+.rk{display:inline-block;min-width:34px;text-align:center;font-weight:800;border-radius:6px;padding:2px 6px;background:#f1f2f5}
+.rk.r1{background:#f59e0b;color:#fff}.rk.r2{background:#9ca3af;color:#fff}.rk.r3{background:#b45309;color:#fff}
+pre.code{background:#111827;color:#e5e7eb;padding:14px;border-radius:8px;overflow:auto;max-height:520px;font-size:12px;line-height:1.5}
+.warnbox{background:#fef3c7;border:1px solid #fcd34d;padding:10px 12px;border-radius:8px;margin-bottom:12px;line-height:1.6}
+.infobox{background:#eff6ff;border:1px solid #bfdbfe;padding:10px 12px;border-radius:8px;line-height:1.7}
+ol li,ul li{line-height:1.8}
+.overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:center;justify-content:center;z-index:50}
+.overlay.show{display:flex}
+.overlay div{font-size:200px;font-weight:900;color:#fff}
+.muted{color:var(--sub);font-size:12px}
+.hidden{display:none!important}
+kbd{background:#f1f2f5;border:1px solid var(--bd);border-radius:4px;padding:0 5px;font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>체육 · 움직임 측정 실험실</h1>
+    <div class="subt">오렌지보드 + 자이로/가속도 센서(MPU6050) · 10초 운동량 측정 · 실시간 그래프 · 구간 분석 · 순위</div>
+  </div>
+  <div class="status"><span class="dot" id="dot"></span><span id="stText">연결 안 됨</span><span id="hz" style="opacity:.85;font-size:12px">0 Hz</span></div>
+</header>
+<div class="tabs">
+  <div class="tab active" data-p="pMeasure">측정하기</div>
+  <div class="tab" data-p="pRank">순위 · 기록</div>
+  <div class="tab" data-p="pCode">아두이노 코드 · 배선</div>
+  <div class="tab" data-p="pHelp">사용 안내 · 문제 해결</div>
+</div>
+
+<main>
+<!-- ============ 측정 페이지 ============ -->
+<section class="page active" id="pMeasure">
+  <div id="noSerial" class="warnbox hidden">이 브라우저는 USB 시리얼(Web Serial) 연결을 지원하지 않습니다. <b>크롬(Chrome)</b> 또는 <b>엣지(Edge)</b> 최신 버전으로 이 파일을 열어 주세요. (체험 모드는 사용할 수 있습니다.)</div>
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2><span><span class="num">1</span>오렌지보드 연결</span></h2>
+        <div class="row">
+          <button class="primary" id="btnConnect">USB 연결</button>
+          <button id="btnQuick" class="hidden">이전 보드로 바로 연결</button>
+          <button id="btnDisconnect" disabled>연결 해제</button>
+        </div>
+        <div class="row">
+          <button id="btnDemo">체험 모드(보드 없이)</button>
+          <label class="ck"><input type="checkbox" id="autoRe" checked>USB 재연결 시 자동 연결</label>
+        </div>
+        <div class="log" id="log"></div>
+      </div>
+
+      <div class="card">
+        <h2><span><span class="num">2</span>학생 정보</span></h2>
+        <div class="fld">
+          <div><label>학년-반</label><input type="text" id="stCls" placeholder="예: 2-3"></div>
+          <div><label>번호</label><input type="number" id="stNum" min="1" placeholder="예: 12"></div>
+          <div class="full"><label>이름</label><input type="text" id="stName" list="nameList" placeholder="이름 입력"><datalist id="nameList"></datalist></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2><span><span class="num">3</span>측정 (10초 자동)</span><span class="mode" id="modeTag">대기</span></h2>
+        <div class="timer" id="timer">10.0<small> 초</small></div>
+        <div class="prog"><div id="progBar"></div></div>
+        <div class="row">
+          <button class="green bigbtn" id="btnStart">측정 시작</button>
+          <button class="red bigbtn" id="btnStop" disabled>측정 종료</button>
+        </div>
+        <div class="row">
+          <label class="ck"><input type="checkbox" id="useCd" checked>3초 카운트다운</label>
+          <label class="ck"><input type="checkbox" id="useSound" checked>신호음</label>
+        </div>
+        <div class="row">
+          <button class="sm" id="btnCalib">영점 조정(센서를 가만히 두고 누르기)</button>
+          <span class="muted" id="calibInfo">보정 없음</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>실시간 센서 값</h2>
+        <div class="live">
+          <div><span>가속도 X (g)</span><b id="vAx">-</b></div>
+          <div><span>가속도 Y (g)</span><b id="vAy">-</b></div>
+          <div><span>가속도 Z (g)</span><b id="vAz">-</b></div>
+          <div><span>회전 X (°/s)</span><b id="vGx">-</b></div>
+          <div><span>회전 Y (°/s)</span><b id="vGy">-</b></div>
+          <div><span>회전 Z (°/s)</span><b id="vGz">-</b></div>
+          <div class="hl" style="grid-column:span 2"><span>움직임 크기 (중력 제외, g)</span><b id="vDyn">-</b></div>
+          <div class="hl"><span>회전 크기 (°/s)</span><b id="vGm">-</b></div>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <div class="card">
+        <h2><span>움직임 그래프 <span class="mode" id="chartMode">실시간 미리보기</span></span>
+          <span class="row"><label class="ck"><input type="checkbox" id="showAxes">X·Y·Z 축별 표시</label></span></h2>
+        <div class="chartwrap"><canvas class="chart" id="cvAcc"></canvas></div>
+        <div class="chartwrap g"><canvas class="chart" id="cvGyro"></canvas></div>
+        <div class="muted">측정이 끝난 뒤 그래프 위를 <b>마우스로 드래그(터치 가능)</b>하면 원하는 구간만 골라 분석할 수 있습니다.</div>
+      </div>
+
+      <div class="card hidden" id="resultCard">
+        <h2><span>측정 결과 분석 <span class="muted" id="resWho"></span></span>
+          <span class="row"><button class="blue sm" id="btnReport">분석표 PDF 저장 · 인쇄</button><button class="sm" id="btnReady">새 측정 준비</button></span></h2>
+        <div class="cards" id="sumCards"></div>
+        <div style="margin-top:12px"><b>움직임 강도 분포</b> <span class="muted">(측정 시간 중 각 강도로 움직인 시간 비율)</span></div>
+        <div class="ibar" id="ibar"></div>
+        <div class="legend" id="ilegend"></div>
+        <div class="fb" id="feedback"></div>
+      </div>
+
+      <div class="card hidden" id="rangeCard">
+        <h2><span>선택 구간 분석 <span class="muted" id="rangeTxt"></span></span><button class="sm" id="btnClearSel">선택 해제</button></h2>
+        <div class="cards" id="rangeCards"></div>
+      </div>
+
+      <div class="card hidden" id="segCard">
+        <h2>1초 구간별 분석</h2>
+        <table class="t" id="segTable"></table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 순위 페이지 ============ -->
+<section class="page" id="pRank">
+  <div class="card">
+    <h2><span>최고 움직임 순위 <span class="muted">(학생별 최고 움직임 점수 기준, 동점이면 운동량 점수 순)</span></span>
+      <span class="row"><input type="text" id="rankFilter" placeholder="반 필터 (예: 2-3)" style="width:160px">
+      <button class="blue sm" id="btnPrintRank">순위표 PDF 저장 · 인쇄</button>
+      <button class="sm" id="btnCsvRank">순위 CSV(엑셀)</button></span></h2>
+    <table class="t" id="rankTable"></table>
+  </div>
+  <div class="card">
+    <h2><span>전체 측정 기록</span><span class="row"><button class="sm" id="btnCsvAll">기록 CSV(엑셀)</button><button class="sm red" id="btnClearAll">전체 기록 삭제</button></span></h2>
+    <table class="t" id="recTable"></table>
+    <div class="muted" style="margin-top:8px">기록은 이 컴퓨터의 브라우저(localStorage)에 저장됩니다. 다른 컴퓨터로 옮기려면 CSV로 저장해 두세요.</div>
+  </div>
+</section>
+
+<!-- ============ 코드 페이지 ============ -->
+<section class="page" id="pCode">
+  <div class="grid">
+    <div>
+      <div class="card">
+        <h2>배선도 (I2C 연결)</h2>
+        <svg viewBox="0 0 320 250" width="100%">
+          <rect x="10" y="20" width="130" height="210" rx="8" fill="#ff7a00"/>
+          <text x="75" y="45" text-anchor="middle" fill="#fff" font-size="14" font-weight="700">오렌지보드</text>
+          <text x="75" y="62" text-anchor="middle" fill="#fff" font-size="10">(UNO 호환)</text>
+          <g font-size="12" fill="#fff" font-weight="700">
+            <text x="120" y="95" text-anchor="end">5V</text>
+            <text x="120" y="130" text-anchor="end">GND</text>
+            <text x="120" y="165" text-anchor="end">A5 (SCL)</text>
+            <text x="120" y="200" text-anchor="end">A4 (SDA)</text>
+          </g>
+          <rect x="200" y="60" width="110" height="160" rx="8" fill="#1e3a8a"/>
+          <text x="255" y="85" text-anchor="middle" fill="#fff" font-size="13" font-weight="700">MPU6050</text>
+          <text x="255" y="100" text-anchor="middle" fill="#fff" font-size="10">(GY-521)</text>
+          <g font-size="12" fill="#fff" font-weight="700">
+            <text x="215" y="125">VCC</text><text x="215" y="150">GND</text><text x="215" y="175">SCL</text><text x="215" y="200">SDA</text>
+          </g>
+          <path d="M125 91 H165 V121 H210" stroke="#ef4444" stroke-width="3" fill="none"/>
+          <path d="M125 126 H175 V146 H210" stroke="#111827" stroke-width="3" fill="none"/>
+          <path d="M125 161 H185 V171 H210" stroke="#eab308" stroke-width="3" fill="none"/>
+          <path d="M125 196 H210" stroke="#22c55e" stroke-width="3" fill="none"/>
+        </svg>
+        <table class="t">
+          <tr><th>MPU6050 핀</th><th>오렌지보드 핀</th><th>설명</th></tr>
+          <tr><td>VCC</td><td>5V</td><td>전원 (GY-521 모듈은 5V 가능)</td></tr>
+          <tr><td>GND</td><td>GND</td><td>접지</td></tr>
+          <tr><td><b>SCL</b></td><td><b>A5</b></td><td>I2C 클럭</td></tr>
+          <tr><td><b>SDA</b></td><td><b>A4</b></td><td>I2C 데이터</td></tr>
+          <tr><td>AD0</td><td>연결 안 함</td><td>주소 0x68 (연결 시 0x69도 자동 인식)</td></tr>
+        </table>
+      </div>
+      <div class="card">
+        <h2>업로드 순서</h2>
+        <ol style="padding-left:18px;margin:0">
+          <li>아두이노 IDE 실행 → <b>도구 &gt; 보드</b>: <b>Arduino Uno</b></li>
+          <li><b>도구 &gt; 포트</b>: 오렌지보드 COM 포트 선택</li>
+          <li>오른쪽 코드를 복사해 붙여넣고 <b>업로드</b> (추가 라이브러리 설치 불필요)</li>
+          <li>업로드 후 <b>시리얼 모니터는 반드시 닫기</b> (열려 있으면 웹앱이 연결할 수 없음)</li>
+          <li>측정하기 탭 → <b>USB 연결</b> → 포트 선택</li>
+        </ol>
+        <div class="infobox" style="margin-top:10px">포트가 보이지 않으면 오렌지보드의 USB 칩(CH340) 드라이버를 설치해야 할 수 있습니다. 데이터 전송이 되는 USB 케이블인지도 확인하세요.</div>
+      </div>
+    </div>
+    <div class="card">
+      <h2><span>아두이노 IDE 코드 (orangeboard_gyro_pe.ino)</span>
+        <span class="row"><button class="primary sm" id="btnCopy">코드 복사</button><button class="sm" id="btnDl">.ino 파일 다운로드</button></span></h2>
+      <pre class="code" id="codeView"></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ============ 안내 페이지 ============ -->
+<section class="page" id="pHelp">
+  <div class="card">
+    <h2>수업 진행 방법</h2>
+    <ol style="padding-left:18px">
+      <li>센서를 배선한 뒤 아두이노 코드를 업로드합니다. 센서는 테이프나 밴드로 <b>손목, 허리, 발목</b> 중 한 곳에 단단히 고정합니다.</li>
+      <li><b>USB 연결</b>을 누르고 포트를 선택합니다. 상단 상태가 초록색 “수신 중”이 되면 준비 완료입니다.</li>
+      <li>센서를 가만히 둔 상태에서 <b>영점 조정</b>을 한 번 누릅니다. (정지 상태의 값을 0으로 맞춥니다.)</li>
+      <li>학생 정보를 입력하고 <b>측정 시작</b>을 누르면 3초 카운트다운 후 <b>10초 동안 자동 측정</b>됩니다. 도중에 <b>측정 종료</b>를 누르면 그때까지의 기록으로 분석합니다.</li>
+      <li>결과는 자동 저장되고, <b>순위 · 기록</b> 탭에서 학생별 최고점 순위를 확인할 수 있습니다.</li>
+      <li><b>분석표 PDF 저장 · 인쇄</b>를 누르고 인쇄 창에서 대상(프린터)을 <b>“PDF로 저장”</b>으로 고르면 PDF 파일로 저장되고, 프린터를 고르면 바로 인쇄됩니다.</li>
+    </ol>
+  </div>
+  <div class="card">
+    <h2>분석 지표 설명</h2>
+    <table class="t">
+      <tr><th>지표</th><th>의미</th></tr>
+      <tr><td>움직임 크기 (g)</td><td>가속도 크기에서 중력(1g)을 뺀 값입니다. 가만히 있으면 0에 가깝고, 세게 움직일수록 커집니다.</td></tr>
+      <tr><td>최고 움직임 점수</td><td>측정 시간 중 가장 큰 움직임 크기 × 100입니다. <b>순위의 기준</b>이 됩니다.</td></tr>
+      <tr><td>운동량 점수</td><td>움직임 크기를 시간에 따라 누적한 값(g·초 × 100)입니다. 쉬지 않고 많이 움직일수록 커집니다.</td></tr>
+      <tr><td>회전 속도 (°/s)</td><td>자이로센서가 측정한 1초당 회전 각도입니다. 팔 돌리기, 몸 비틀기 등에서 커집니다.</td></tr>
+      <tr><td>동작 횟수</td><td>움직임 크기가 0.5g를 넘은 횟수입니다 (0.25초 이내 중복 제외). 점프, 스쿼트 횟수 등과 비교해 볼 수 있습니다.</td></tr>
+      <tr><td>강도 분포</td><td>정지(&lt;0.1g), 가벼움(0.1~0.5g), 보통(0.5~1.0g), 격렬(≥1.0g)으로 나누어 각 강도로 움직인 시간 비율을 보여 줍니다.</td></tr>
+    </table>
+  </div>
+  <div class="card">
+    <h2>연결 문제 해결</h2>
+    <table class="t">
+      <tr><th>증상</th><th>해결 방법</th></tr>
+      <tr><td>포트 선택 창에 보드가 없음</td><td>CH340 드라이버 설치, 데이터 전송용 USB 케이블 사용, 다른 USB 포트에 꽂기</td></tr>
+      <tr><td>“포트를 열 수 없음”</td><td>아두이노 IDE의 시리얼 모니터나 시리얼 플로터, 다른 탭의 웹앱이 포트를 쓰고 있는지 확인하고 닫기</td></tr>
+      <tr><td>연결됐지만 “데이터 없음”</td><td>코드 업로드 여부 확인, 통신 속도 115200 확인, 배선 확인 (SCL→A5, SDA→A4)</td></tr>
+      <tr><td>“센서를 찾을 수 없음”</td><td>VCC와 GND 연결, 점퍼선 접촉 상태 확인 (2초마다 자동으로 다시 시도함)</td></tr>
+      <tr><td>측정 중 USB가 빠짐</td><td>그때까지의 데이터로 결과를 저장합니다. 다시 꽂으면 자동으로 다시 연결됩니다.</td></tr>
+      <tr><td>그래프가 끊김</td><td>센서 선이 길거나 흔들리면 I2C가 불안정해집니다. 선을 짧게 하고 테이프로 고정하세요. 오류가 나면 코드가 센서를 자동으로 다시 초기화합니다.</td></tr>
+    </table>
+  </div>
+</section>
+</main>
+
+<div class="overlay" id="overlay"><div id="cdNum">3</div></div>
+
+<script type="text/plain" id="inoSrc">/*
+  체육 움직임 측정 - 오렌지보드 + MPU6050(GY-521) 자이로/가속도 센서
+  ---------------------------------------------------------------
+  배선 : VCC -> 5V,  GND -> GND,  SCL -> A5,  SDA -> A4
+  보드 : Arduino Uno (오렌지보드)
+  통신 : 115200 bps
+  출력 : D,시간(ms),ax,ay,az,gx,gy,gz
+         가속도 단위 = mg (1/1000 g), 회전 단위 = 0.1 °/s
+  명령 : P = 연결 확인(PONG),  R = 센서 재시작,  S0 = 전송 정지,  S1 = 전송 시작
+  필요 라이브러리 없음 (기본 Wire 라이브러리만 사용)
+*/
+#include <Wire.h>
+
+const unsigned long BAUD        = 115200;
+const unsigned long INTERVAL_MS = 20;      // 50Hz (1초에 50번 측정)
+
+uint8_t mpuAddr = 0x68;
+bool sensorOK   = false;
+bool streaming  = true;
+unsigned long lastSample = 0;
+unsigned long lastRetry  = 0;
+uint8_t errCount = 0;
+char cmdBuf[16];
+uint8_t cmdLen = 0;
+
+void writeReg(uint8_t reg, uint8_t val) {
+  Wire.beginTransmission(mpuAddr);
+  Wire.write(reg);
+  Wire.write(val);
+  Wire.endTransmission();
+}
+
+bool probe(uint8_t addr) {
+  Wire.beginTransmission(addr);
+  return Wire.endTransmission() == 0;
+}
+
+bool initMPU() {
+  if (probe(0x68))      mpuAddr = 0x68;
+  else if (probe(0x69)) mpuAddr = 0x69;
+  else return false;
+
+  writeReg(0x6B, 0x80);   // 센서 리셋
+  delay(100);
+  writeReg(0x6B, 0x01);   // 절전 해제, 자이로 클럭 사용(안정적)
+  delay(10);
+  writeReg(0x19, 0x07);   // 샘플링 분주
+  writeReg(0x1A, 0x03);   // 저역 필터 약 44Hz (떨림 노이즈 감소)
+  writeReg(0x1B, 0x08);   // 자이로 범위 ±500 °/s
+  writeReg(0x1C, 0x10);   // 가속도 범위 ±8 g (점프 등 큰 동작 대비)
+  delay(50);
+  return true;
+}
+
+bool readMPU(int16_t *v) {
+  Wire.beginTransmission(mpuAddr);
+  Wire.write(0x3B);
+  if (Wire.endTransmission(false) != 0) return false;
+  uint8_t n = Wire.requestFrom((int)mpuAddr, 14);
+  if (n != 14) {
+    while (Wire.available()) Wire.read();
+    return false;
+  }
+  for (uint8_t i = 0; i < 7; i++) {
+    int16_t hi = Wire.read();
+    int16_t lo = Wire.read();
+    v[i] = (hi << 8) | lo;
+  }
+  return true;
+}
+
+void reportStatus() {
+  if (sensorOK) Serial.println(F("READY,MPU6050"));
+  else          Serial.println(F("ERR,NO_SENSOR"));
+}
+
+void handleCommand() {
+  cmdBuf[cmdLen] = 0;
+  if (cmdBuf[0] == 'P') {
+    Serial.println(F("PONG"));
+  } else if (cmdBuf[0] == 'R') {
+    sensorOK = initMPU();
+    errCount = 0;
+    reportStatus();
+  } else if (cmdBuf[0] == 'S' && cmdBuf[1] == '0') {
+    streaming = false;
+  } else if (cmdBuf[0] == 'S' && cmdBuf[1] == '1') {
+    streaming = true;
+  }
+  cmdLen = 0;
+}
+
+void handleSerial() {
+  while (Serial.available()) {
+    char c = Serial.read();
+    if (c == '\n' || c == '\r') {
+      if (cmdLen > 0) handleCommand();
+    } else if (cmdLen < sizeof(cmdBuf) - 1) {
+      cmdBuf[cmdLen++] = c;
+    } else {
+      cmdLen = 0;
+    }
+  }
+}
+
+void setup() {
+  Serial.begin(BAUD);
+  Wire.begin();
+  Wire.setClock(100000);            // 긴 점퍼선에서도 안정적인 100kHz
+#if defined(WIRE_HAS_TIMEOUT)
+  Wire.setWireTimeout(3000, true);  // I2C 멈춤 방지 (최신 보드 패키지)
+#endif
+  delay(100);
+  sensorOK = initMPU();
+  reportStatus();
+  lastSample = millis();
+}
+
+void loop() {
+  handleSerial();
+  unsigned long now = millis();
+
+  if (!sensorOK) {                  // 센서가 없으면 2초마다 다시 찾기
+    if (now - lastRetry > 2000) {
+      lastRetry = now;
+      sensorOK = initMPU();
+      reportStatus();
+    }
+    return;
+  }
+
+  if (streaming && (now - lastSample >= INTERVAL_MS)) {
+    lastSample += INTERVAL_MS;
+    if (now - lastSample > 200) lastSample = now;   // 밀림 방지
+
+    int16_t v[7];
+    if (readMPU(v)) {
+      errCount = 0;
+      int ax = (long)v[0] * 1000 / 4096;   // mg  (±8g: 4096 LSB/g)
+      int ay = (long)v[1] * 1000 / 4096;
+      int az = (long)v[2] * 1000 / 4096;
+      int gx = (long)v[4] * 100 / 655;     // 0.1°/s (±500: 65.5 LSB/°/s)
+      int gy = (long)v[5] * 100 / 655;
+      int gz = (long)v[6] * 100 / 655;
+      char buf[64];
+      snprintf(buf, sizeof(buf), "D,%lu,%d,%d,%d,%d,%d,%d", now, ax, ay, az, gx, gy, gz);
+      Serial.println(buf);
+    } else {
+      errCount++;
+      if (errCount > 10) {          // 연속 오류 -> 센서 재초기화
+        Serial.println(F("ERR,I2C"));
+        Wire.begin();
+        sensorOK = initMPU();
+        errCount = 0;
+        reportStatus();
+      }
+    }
+  }
+}
+</script>
+
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const DURATION = 10000;
+const MOVE_TH = 0.5;
+const MOVE_GAP = 250;
+const LV = [
+  { n: '정지', max: 0.1, c: '#9ca3af' },
+  { n: '가벼움', max: 0.5, c: '#60a5fa' },
+  { n: '보통', max: 1.0, c: '#f59e0b' },
+  { n: '격렬', max: Infinity, c: '#ef4444' }
+];
+const STORE_KEY = 'pe_gyro_records_v1';
+const CALIB_KEY = 'pe_gyro_calib_v1';
+
+const S = {
+  port: null, reader: null, readLoopP: null, keepReading: false,
+  connected: false, demo: false, demoTimer: null,
+  lastDataAt: 0, lastKick: 0, cnt: 0, sensorErr: false, lostPort: null, connecting: false,
+  live: [], last: null,
+  measuring: false, counting: false, cancelCd: false, startT: null, hostStart: 0, rec: [],
+  result: null, sel: null, drag: null,
+  calibrating: false, calibBuf: [],
+  bias: { gx: 0, gy: 0, gz: 0, sc: 1 },
+  records: []
+};
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }
+
+function log(msg, type) {
+  const el = $('log');
+  const d = document.createElement('div');
+  d.className = 'l-' + (type || 'i');
+  d.textContent = '[' + new Date().toLocaleTimeString() + '] ' + msg;
+  el.prepend(d);
+  while (el.children.length > 80) el.lastChild.remove();
+}
+
+function setStatus(cls, text) {
+  $('dot').className = 'dot ' + cls;
+  $('stText').textContent = text;
+}
+
+function updateConnButtons() {
+  const on = S.connected || S.demo;
+  $('btnConnect').disabled = on || S.connecting;
+  $('btnQuick').disabled = on || S.connecting;
+  $('btnDisconnect').disabled = !on;
+  $('btnDemo').textContent = S.demo ? '체험 모드 끄기' : '체험 모드(보드 없이)';
+  $('btnDemo').disabled = S.connected;
+}
+
+/* ---------------- 소리 ---------------- */
+let audioCtx = null;
+function beep(freq, dur) {
+  if (!$('useSound').checked) return;
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = audioCtx.createOscillator();
+    const g = audioCtx.createGain();
+    o.frequency.value = freq;
+    g.gain.value = 0.15;
+    o.connect(g);
+    g.connect(audioCtx.destination);
+    o.start();
+    o.stop(audioCtx.currentTime + (dur || 0.15));
+  } catch (e) { }
+}
+
+/* ---------------- 시리얼 연결 ---------------- */
+let writeChain = Promise.resolve();
+function sendCmd(c) {
+  writeChain = writeChain.then(async () => {
+    if (!S.port || !S.port.writable) return;
+    const w = S.port.writable.getWriter();
+    try {
+      await w.write(new TextEncoder().encode(c + '\n'));
+    } catch (e) {
+      log('명령 전송 실패: ' + e.message, 'w');
+    } finally {
+      w.releaseLock();
+    }
+  }).catch(() => { });
+  return writeChain;
+}
+
+async function connectSerial(port) {
+  if (!('serial' in navigator)) {
+    alert('이 브라우저는 USB 시리얼 연결을 지원하지 않습니다. 크롬 또는 엣지를 사용해 주세요.');
+    return;
+  }
+  if (S.connected || S.connecting) return;
+  if (S.demo) stopDemo();
+  try {
+    if (!port) port = await navigator.serial.requestPort();
+  } catch (e) {
+    if (e.name !== 'NotFoundError') log('포트 선택 오류: ' + e.message, 'e');
+    return;
+  }
+  S.connecting = true;
+  updateConnButtons();
+  setStatus('conn', '연결 중...');
+  let opened = false;
+  for (let attempt = 1; attempt <= 3 && !opened; attempt++) {
+    try {
+      await port.open({ baudRate: 115200, dataBits: 8, stopBits: 1, parity: 'none', flowControl: 'none', bufferSize: 16384 });
+      opened = true;
+    } catch (e) {
+      if (e.name === 'InvalidStateError') {
+        opened = true;
+      } else {
+        log('포트 열기 실패(' + attempt + '/3): ' + e.message, 'w');
+        await sleep(800);
+      }
+    }
+  }
+  if (!opened) {
+    S.connecting = false;
+    updateConnButtons();
+    setStatus('bad', '연결 실패');
+    log('포트를 열 수 없습니다. 아두이노 IDE의 시리얼 모니터/플로터나 다른 프로그램을 닫고 다시 시도하세요.', 'e');
+    alert('포트를 열 수 없습니다.\n아두이노 IDE의 시리얼 모니터(또는 플로터)가 열려 있으면 닫고 다시 연결하세요.');
+    return;
+  }
+  S.port = port;
+  S.connected = true;
+  S.connecting = false;
+  S.keepReading = true;
+  S.lostPort = null;
+  S.sensorErr = false;
+  S.live = [];
+  S.lastDataAt = performance.now();
+  S.lastKick = performance.now();
+  try {
+    await port.setSignals({ dataTerminalReady: false, requestToSend: false });
+    await sleep(120);
+    await port.setSignals({ dataTerminalReady: true, requestToSend: true });
+  } catch (e) { }
+  S.readLoopP = readLoop();
+  updateConnButtons();
+  setStatus('conn', '연결됨 · 보드 시작 대기');
+  const info = port.getInfo ? port.getInfo() : {};
+  log('USB 포트 열림' + (info.usbVendorId ? ' (VID ' + info.usbVendorId.toString(16) + ')' : '') + ' · 보드 재시작 대기 중...', 'o');
+  setTimeout(() => { if (S.connected) sendCmd('P'); }, 2200);
+  setTimeout(() => { if (S.connected) sendCmd('S1'); }, 2400);
+  refreshQuick();
+}
+
+async function readLoop() {
+  const decoder = new TextDecoder();
+  let buffer = '';
+  while (S.port && S.port.readable && S.keepReading) {
+    try {
+      S.reader = S.port.readable.getReader();
+    } catch (e) {
+      break;
+    }
+    try {
+      while (true) {
+        const { value, done } = await S.reader.read();
+        if (done) break;
+        if (value) {
+          buffer += decoder.decode(value, { stream: true });
+          let idx;
+          while ((idx = buffer.indexOf('\n')) >= 0) {
+            const line = buffer.slice(0, idx).replace(/\r/g, '').trim();
+            buffer = buffer.slice(idx + 1);
+            if (line) handleLine(line);
+          }
+          if (buffer.length > 4000) buffer = '';
+        }
+      }
+    } catch (e) {
+      if (S.keepReading) log('읽기 오류 – 자동 복구 시도: ' + e.message, 'w');
+      buffer = '';
+      await sleep(50);
+    } finally {
+      try { S.reader.releaseLock(); } catch (e) { }
+      S.reader = null;
+    }
+  }
+}
+
+async function closePort() {
+  S.keepReading = false;
+  try { if (S.reader) await S.reader.cancel(); } catch (e) { }
+  try { if (S.readLoopP) await S.readLoopP; } catch (e) { }
+  try { await writeChain; } catch (e) { }
+  try { if (S.port) await S.port.close(); } catch (e) { }
+  S.port = null;
+  S.reader = null;
+  S.readLoopP = null;
+  S.connected = false;
+  updateConnButtons();
+}
+
+async function disconnectSerial() {
+  if (S.demo) { stopDemo(); return; }
+  if (S.measuring || S.counting) stopMeasure();
+  S.lostPort = null;
+  await closePort();
+  setStatus('', '연결 안 됨');
+  log('연결을 해제했습니다.');
+}
+
+if ('serial' in navigator) {
+  navigator.serial.addEventListener('disconnect', async e => {
+    if (S.port && e.target === S.port) {
+      log('USB 연결이 끊어졌습니다. 케이블을 다시 꽂으면 자동으로 연결합니다.', 'e');
+      if (S.measuring || S.counting) stopMeasure();
+      const p = S.port;
+      await closePort();
+      S.lostPort = p;
+      setStatus('bad', '연결 끊김 · USB 다시 꽂기');
+      beep(300, 0.4);
+    }
+  });
+  navigator.serial.addEventListener('connect', e => {
+    refreshQuick();
+    if ($('autoRe').checked && !S.connected && !S.connecting && S.lostPort) {
+      log('USB 재연결 감지 – 자동 연결합니다.', 'o');
+      setTimeout(() => connectSerial(e.target), 1500);
+    }
+  });
+} else {
+  $('noSerial').classList.remove('hidden');
+}
+
+async function refreshQuick() {
+  if (!('serial' in navigator)) return;
+  try {
+    const ports = await navigator.serial.getPorts();
+    $('btnQuick').classList.toggle('hidden', ports.length === 0);
+  } catch (e) { }
+}
+async function quickConnect() {
+  const ports = await navigator.serial.getPorts();
+  if (ports.length) connectSerial(ports[ports.length - 1]);
+}
+
+/* ---------------- 데이터 처리 ---------------- */
+function handleLine(line) {
+  if (line.charCodeAt(0) === 68 && line[1] === ',') {
+    const p = line.split(',');
+    if (p.length !== 8) return;
+    const n = p.slice(1).map(Number);
+    for (const v of n) { if (!isFinite(v)) return; }
+    onSample({ t: n[0], ax: n[1] / 1000, ay: n[2] / 1000, az: n[3] / 1000, gx: n[4] / 10, gy: n[5] / 10, gz: n[6] / 10 });
+    return;
+  }
+  if (line.startsWith('READY')) {
+    S.sensorErr = false;
+    log('센서 준비 완료 (' + line + ')', 'o');
+  } else if (line.startsWith('ERR')) {
+    S.sensorErr = true;
+    if (line.includes('NO_SENSOR')) {
+      log('센서를 찾을 수 없습니다. 배선(VCC, GND, SCL→A5, SDA→A4)을 확인하세요.', 'e');
+      setStatus('warn', '연결됨 · 센서 없음');
+    } else {
+      log('센서 통신 오류(' + line + ') – 자동 재시작', 'w');
+    }
+  } else if (line === 'PONG') {
+    log('보드 응답 확인 (PONG)', 'o');
+  }
+}
+
+function onSample(raw) {
+  S.lastDataAt = performance.now();
+  S.cnt++;
+  if (S.sensorErr) S.sensorErr = false;
+  if (S.calibrating) S.calibBuf.push(raw);
+  const b = S.bias;
+  const s = {
+    t: raw.t,
+    ax: raw.ax * b.sc, ay: raw.ay * b.sc, az: raw.az * b.sc,
+    gx: raw.gx - b.gx, gy: raw.gy - b.gy, gz: raw.gz - b.gz
+  };
+  const mag = Math.sqrt(s.ax * s.ax + s.ay * s.ay + s.az * s.az);
+  s.dyn = Math.abs(mag - 1);
+  s.gm = Math.sqrt(s.gx * s.gx + s.gy * s.gy + s.gz * s.gz);
+  S.last = s;
+
+  if (S.live.length && s.t < S.live[S.live.length - 1].t) S.live = [];
+  S.live.push(s);
+  while (S.live.length && S.live[0].t < s.t - DURATION) S.live.shift();
+
+  if (S.measuring) {
+    if (S.startT === null) S.startT = s.t;
+    const rel = s.t - S.startT;
+    if (rel < 0) {
+      log('보드가 재시작되어 측정을 마칩니다.', 'w');
+      stopMeasure();
+    } else if (rel > DURATION) {
+      finishMeasure();
+    } else {
+      S.rec.push(Object.assign({}, s, { t: rel }));
+    }
+  }
+  S.dirty = true;
+}
+
+/* 데이터 감시 (연결 안정성) */
+setInterval(() => {
+  $('hz').textContent = S.cnt + ' Hz';
+  const hz = S.cnt;
+  S.cnt = 0;
+  if (S.demo) { setStatus('demo', '체험 모드 · 가상 데이터'); return; }
+  if (!S.connected) return;
+  const gap = performance.now() - S.lastDataAt;
+  if (gap > 3000) {
+    if (!S.sensorErr) setStatus('warn', '연결됨 · 데이터 없음');
+    if (performance.now() - S.lastKick > 6000) {
+      S.lastKick = performance.now();
+      log('데이터가 들어오지 않아 센서 재시작 명령을 보냈습니다. (코드 업로드·배선 확인)', 'w');
+      sendCmd('S1');
+      sendCmd('R');
+    }
+  } else if (!S.sensorErr) {
+    setStatus(hz >= 30 ? 'ok' : 'warn', '연결됨 · 수신 중' + (hz < 30 ? ' (느림)' : ''));
+  }
+}, 1000);
+
+/* ---------------- 체험 모드 ---------------- */
+function startDemo() {
+  if (S.connected) return;
+  S.demo = true;
+  S.live = [];
+  const t0 = performance.now();
+  const seed = Math.random() * 10;
+  S.demoTimer = setInterval(() => {
+    const t = Math.round(performance.now() - t0);
+    const k = t / 1000 + seed;
+    const act = Math.pow((Math.sin(k * 0.6) + 1) / 2, 1.5);
+    const jump = Math.pow(Math.max(0, Math.sin(k * 2 * Math.PI * 1.4)), 4) * act * 2.8;
+    const r = () => (Math.random() - 0.5);
+    onSample({
+      t: t,
+      ax: 0.35 * act * Math.sin(k * 7) + r() * 0.04,
+      ay: 0.25 * act * Math.cos(k * 5) + r() * 0.04,
+      az: 1 + jump - 0.4 * act * Math.sin(k * 9) + r() * 0.04,
+      gx: 160 * act * Math.sin(k * 6) + r() * 3,
+      gy: 90 * act * Math.cos(k * 4) + r() * 3,
+      gz: 50 * act * Math.sin(k * 3) + r() * 3
+    });
+  }, 20);
+  updateConnButtons();
+  setStatus('demo', '체험 모드 · 가상 데이터');
+  log('체험 모드 시작 – 가상의 움직임 데이터를 생성합니다.', 'o');
+}
+function stopDemo() {
+  if (S.measuring || S.counting) stopMeasure();
+  clearInterval(S.demoTimer);
+  S.demo = false;
+  S.live = [];
+  updateConnButtons();
+  setStatus('', '연결 안 됨');
+  log('체험 모드 종료');
+}
+
+/* ---------------- 영점 조정 ---------------- */
+function loadCalib() {
+  try {
+    const c = JSON.parse(localStorage.getItem(CALIB_KEY));
+    if (c && isFinite(c.sc)) S.bias = c;
+  } catch (e) { }
+  showCalib();
+}
+function showCalib() {
+  const b = S.bias;
+  $('calibInfo').textContent = (b.gx || b.gy || b.gz) ? '보정됨 (회전 ' + b.gx.toFixed(1) + ', ' + b.gy.toFixed(1) + ', ' + b.gz.toFixed(1) + ')' : '보정 없음';
+}
+async function calibrate() {
+  if (!S.connected && !S.demo) { alert('먼저 보드를 연결하세요.'); return; }
+  if (S.measuring) return;
+  $('btnCalib').disabled = true;
+  $('calibInfo').textContent = '측정 중... 센서를 움직이지 마세요';
+  S.calibBuf = [];
+  S.calibrating = true;
+  await sleep(1500);
+  S.calibrating = false;
+  $('btnCalib').disabled = false;
+  const a = S.calibBuf;
+  if (a.length < 20) { $('calibInfo').textContent = '데이터 부족 – 다시 시도'; return; }
+  let gx = 0, gy = 0, gz = 0, m = 0, gmax = 0;
+  for (const s of a) {
+    gx += s.gx; gy += s.gy; gz += s.gz;
+    m += Math.sqrt(s.ax * s.ax + s.ay * s.ay + s.az * s.az);
+  }
+  gx /= a.length; gy /= a.length; gz /= a.length; m /= a.length;
+  for (const s of a) gmax = Math.max(gmax, Math.abs(s.gx - gx), Math.abs(s.gy - gy), Math.abs(s.gz - gz));
+  if (gmax > 30 || m < 0.7 || m > 1.3) {
+    $('calibInfo').textContent = '센서가 움직였습니다 – 가만히 두고 다시';
+    return;
+  }
+  S.bias = { gx: gx, gy: gy, gz: gz, sc: 1 / m };
+  try { localStorage.setItem(CALIB_KEY, JSON.stringify(S.bias)); } catch (e) { }
+  showCalib();
+  log('영점 조정 완료', 'o');
+  beep(900, 0.1);
+}
+
+/* ---------------- 측정 ---------------- */
+async function startMeasure() {
+  if (!S.connected && !S.demo) { alert('먼저 오렌지보드를 USB로 연결하거나 체험 모드를 켜세요.'); return; }
+  const name = $('stName').value.trim();
+  if (!name) { alert('학생 이름을 입력하세요.'); $('stName').focus(); return; }
+  if (performance.now() - S.lastDataAt > 1500) { alert('센서 데이터가 들어오지 않습니다.\n상단 상태가 "수신 중"인지 확인하세요.'); return; }
+  S.result = null;
+  S.sel = null;
+  S.rec = [];
+  ['resultCard', 'rangeCard', 'segCard'].forEach(id => $(id).classList.add('hidden'));
+  $('btnStart').disabled = true;
+  $('btnStop').disabled = false;
+  S.cancelCd = false;
+  if ($('useCd').checked) {
+    S.counting = true;
+    $('overlay').classList.add('show');
+    for (let i = 3; i > 0; i--) {
+      $('cdNum').textContent = i;
+      beep(600, 0.12);
+      await sleep(1000);
+      if (S.cancelCd) break;
+    }
+    $('overlay').classList.remove('show');
+    S.counting = false;
+    if (S.cancelCd) {
+      $('btnStart').disabled = false;
+      $('btnStop').disabled = true;
+      return;
+    }
+  }
+  beep(1100, 0.35);
+  S.startT = null;
+  S.rec = [];
+  S.hostStart = performance.now();
+  S.measuring = true;
+  $('modeTag').textContent = '측정 중';
+  $('modeTag').className = 'mode rec';
+  log(name + ' 학생 측정 시작 (10초)', 'o');
+}
+
+function stopMeasure() {
+  if (S.counting) { S.cancelCd = true; return; }
+  if (!S.measuring) return;
+  finishMeasure(true);
+}
+
+function finishMeasure(manual) {
+  if (!S.measuring) return;
+  S.measuring = false;
+  $('btnStart').disabled = false;
+  $('btnStop').disabled = true;
+  $('modeTag').textContent = '완료';
+  $('modeTag').className = 'mode res';
+  beep(800, 0.2);
+  setTimeout(() => beep(1200, 0.3), 220);
+  if (S.rec.length < 15) {
+    log('측정 데이터가 너무 적어 저장하지 않았습니다.', 'w');
+    $('modeTag').textContent = '대기';
+    $('modeTag').className = 'mode';
+    return;
+  }
+  const data = S.rec.slice();
+  const stats = analyze(data);
+  const rec = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: $('stName').value.trim(),
+    cls: $('stCls').value.trim(),
+    num: $('stNum').value.trim(),
+    date: new Date().toISOString(),
+    stopped: !!manual,
+    mode: S.demo ? 'demo' : 'board',
+    stats: stats,
+    data: {
+      t: data.map(p => Math.round(p.t)),
+      d: data.map(p => Math.round(p.dyn * 1000) / 1000),
+      g: data.map(p => Math.round(p.gm * 10) / 10)
+    }
+  };
+  S.records.push(rec);
+  saveRecords();
+  S.result = { rec: rec, data: data };
+  renderResult(rec);
+  renderRanking();
+  log(rec.name + ' 측정 완료 · 최고점 ' + stats.peakScore + '점 · 기록 저장됨', 'o');
+}
+
+/* ---------------- 분석 ---------------- */
+function lvIndex(v) {
+  for (let i = 0; i < LV.length; i++) { if (v < LV[i].max) return i; }
+  return LV.length - 1;
+}
+
+function analyze(data) {
+  const r = { n: data.length, dur: 0, peak: 0, peakT: 0, avg: 0, gPeak: 0, gAvg: 0, mom: 0, moves: 0, lv: [0, 0, 0, 0], hz: 0, peakScore: 0 };
+  if (!data.length) return r;
+  let sd = 0, sg = 0, lastMove = -1e9, above = false;
+  const tt = [0, 0, 0, 0];
+  for (let i = 0; i < data.length; i++) {
+    const p = data[i];
+    const dt = i > 0 ? Math.min(Math.max(p.t - data[i - 1].t, 0), 100) / 1000 : 0.02;
+    sd += p.dyn;
+    sg += p.gm;
+    r.mom += p.dyn * dt * 100;
+    if (p.dyn > r.peak) { r.peak = p.dyn; r.peakT = p.t; }
+    if (p.gm > r.gPeak) r.gPeak = p.gm;
+    tt[lvIndex(p.dyn)] += dt;
+    if (!above && p.dyn >= MOVE_TH) {
+      above = true;
+      if (p.t - lastMove >= MOVE_GAP) { r.moves++; lastMove = p.t; }
+    } else if (above && p.dyn < MOVE_TH * 0.6) {
+      above = false;
+    }
+  }
+  const n = data.length;
+  r.avg = sd / n;
+  r.gAvg = sg / n;
+  r.dur = (data[n - 1].t - data[0].t) / 1000;
+  const tot = tt.reduce((a, b) => a + b, 0);
+  r.lv = tt.map(v => tot ? v / tot * 100 : 0);
+  r.hz = r.dur > 0 ? (n - 1) / r.dur : 0;
+  r.peakScore = Math.round(r.peak * 100);
+  r.mom = Math.round(r.mom * 10) / 10;
+  return r;
+}
+
+function segments(data) {
+  const out = [];
+  for (let k = 0; k < 10; k++) {
+    const part = data.filter(p => p.t >= k * 1000 && (p.t < (k + 1) * 1000 || (k === 9 && p.t <= 10000)));
+    out.push({ k: k, r: analyze(part) });
+  }
+  return out;
+}
+
+function feedback(r) {
+  const msg = [];
+  const active = r.lv[2] + r.lv[3];
+  if (r.lv[0] > 60) msg.push('측정 시간의 ' + r.lv[0].toFixed(0) + '%를 거의 정지한 상태로 보냈습니다. 더 크고 빠르게 움직여 보세요.');
+  else if (active >= 50) msg.push('보통 이상의 강도로 움직인 시간이 ' + active.toFixed(0) + '%입니다. 활발하게 운동했습니다.');
+  else msg.push('보통 이상의 강도로 움직인 시간이 ' + active.toFixed(0) + '%입니다. 동작의 크기를 조금 더 키우면 운동 효과가 커집니다.');
+  if (r.peak >= 2) msg.push('최고 움직임이 ' + r.peak.toFixed(2) + 'g로 순간적인 힘(순발력)이 매우 강합니다.');
+  else if (r.peak >= 1) msg.push('최고 움직임이 ' + r.peak.toFixed(2) + 'g로 힘 있는 동작이 나타났습니다.');
+  else msg.push('최고 움직임이 ' + r.peak.toFixed(2) + 'g입니다. 점프나 빠른 동작을 넣으면 최고점이 올라갑니다.');
+  if (r.moves > 0) msg.push('0.5g 이상의 동작이 ' + r.moves + '회(1초에 약 ' + (r.moves / Math.max(r.dur, 1)).toFixed(1) + '회) 나타났습니다.');
+  if (r.gPeak >= 200) msg.push('회전 속도가 최고 ' + r.gPeak.toFixed(0) + '°/s로 몸통이나 팔의 회전이 큰 동작입니다.');
+  return msg.join(' ');
+}
+
+function summaryCards(r, withPeakT) {
+  const items = [
+    ['최고 움직임 점수', r.peakScore, '점', (withPeakT ? (r.peakT / 1000).toFixed(2) + '초 지점 · ' : '') + r.peak.toFixed(2) + 'g', true],
+    ['운동량 점수', r.mom.toFixed(1), '점', '움직임 누적 (g·초×100)'],
+    ['평균 움직임', r.avg.toFixed(3), 'g', ''],
+    ['최고 회전 속도', r.gPeak.toFixed(0), '°/s', '평균 ' + r.gAvg.toFixed(0) + '°/s'],
+    ['동작 횟수', r.moves, '회', '0.5g 이상 동작'],
+    ['측정 시간', r.dur.toFixed(1), '초', r.n + '개 · ' + r.hz.toFixed(0) + 'Hz']
+  ];
+  return items.map(i => '<div class="mc' + (i[4] ? ' main' : '') + '"><div class="k">' + i[0] + '</div><div class="v">' + i[1] + '<small>' + i[2] + '</small></div><div class="d">' + i[3] + '</div></div>').join('');
+}
+
+function intensityBar(r) {
+  return r.lv.map((v, i) => '<div style="width:' + v + '%;background:' + LV[i].c + '">' + (v >= 8 ? LV[i].n + ' ' + v.toFixed(0) + '%' : '') + '</div>').join('');
+}
+
+function segTableHTML(segs) {
+  const mx = Math.max(0.01, ...segs.map(s => s.r.peak));
+  let h = '<tr><th>구간</th><th class="n">평균 움직임(g)</th><th class="n">최고(g)</th><th style="width:22%">최고 막대</th><th class="n">평균 회전(°/s)</th><th class="n">동작</th><th>주된 강도</th></tr>';
+  for (const s of segs) {
+    const r = s.r;
+    const li = r.n ? r.lv.indexOf(Math.max(...r.lv)) : 0;
+    h += '<tr><td>' + s.k + '~' + (s.k + 1) + '초</td><td class="n">' + (r.n ? r.avg.toFixed(3) : '-') + '</td><td class="n">' + (r.n ? r.peak.toFixed(2) : '-') +
+      '</td><td><div class="sbar" style="width:' + (r.peak / mx * 100) + '%"></div></td><td class="n">' + (r.n ? r.gAvg.toFixed(0) : '-') + '</td><td class="n">' + r.moves +
+      '</td><td>' + (r.n ? '<span class="badge" style="background:' + LV[li].c + '">' + LV[li].n + '</span>' : '-') + '</td></tr>';
+  }
+  return h;
+}
+
+function renderResult(rec) {
+  const r = rec.stats;
+  $('resultCard').classList.remove('hidden');
+  $('segCard').classList.remove('hidden');
+  const rk = rankOf(rec);
+  $('resWho').textContent = (rec.cls ? rec.cls + '반 ' : '') + (rec.num ? rec.num + '번 ' : '') + rec.name + (rk ? ' · 현재 ' + rk.total + '명 중 ' + rk.rank + '위' : '');
+  $('sumCards').innerHTML = summaryCards(r, true);
+  $('ibar').innerHTML = intensityBar(r);
+  $('ilegend').innerHTML = LV.map((l, i) => '<span><i style="background:' + l.c + '"></i>' + l.n + ' ' + r.lv[i].toFixed(0) + '%</span>').join('');
+  $('feedback').textContent = feedback(r);
+  $('segTable').innerHTML = segTableHTML(segments(S.result.data));
+  $('chartMode').textContent = '측정 결과 · 드래그하여 구간 선택';
+  $('chartMode').className = 'mode res';
+}
+
+function renderRange() {
+  if (!S.result || !S.sel) { $('rangeCard').classList.add('hidden'); return; }
+  const a = Math.min(S.sel.a, S.sel.b), b = Math.max(S.sel.a, S.sel.b);
+  const part = S.result.data.filter(p => p.t >= a && p.t <= b);
+  if (part.length < 3) { $('rangeCard').classList.add('hidden'); return; }
+  const r = analyze(part);
+  $('rangeCard').classList.remove('hidden');
+  $('rangeTxt').textContent = (a / 1000).toFixed(2) + '초 ~ ' + (b / 1000).toFixed(2) + '초 (' + ((b - a) / 1000).toFixed(2) + '초)';
+  $('rangeCards').innerHTML = summaryCards(r, true) +
+    '<div class="mc" style="grid-column:1/-1"><div class="k">선택 구간 강도 분포</div><div class="ibar">' + intensityBar(r) + '</div></div>';
+}
+
+/* ---------------- 그래프 ---------------- */
+function chartCfg(kind, axes) {
+  if (kind === 'acc') {
+    return {
+      yLabel: '가속도 / 움직임 크기 (g)',
+      series: (axes ? [
+        { key: 'ax', color: '#93c5fd', label: 'X' },
+        { key: 'ay', color: '#86efac', label: 'Y' },
+        { key: 'az', color: '#c4b5fd', label: 'Z' }
+      ] : []).concat([{ key: 'dyn', color: '#ff7a00', label: '움직임 크기', w: 2.2 }]),
+      yMinDef: 0, yMaxDef: 1,
+      hline: { v: MOVE_TH, label: '동작 기준 0.5g' },
+      peakKey: 'dyn', peakUnit: 'g'
+    };
+  }
+  return {
+    yLabel: '회전 속도 (°/s)',
+    series: (axes ? [
+      { key: 'gx', color: '#93c5fd', label: 'X' },
+      { key: 'gy', color: '#86efac', label: 'Y' },
+      { key: 'gz', color: '#c4b5fd', label: 'Z' }
+    ] : []).concat([{ key: 'gm', color: '#2563eb', label: '회전 크기', w: 2.2 }]),
+    yMinDef: 0, yMaxDef: 100,
+    peakKey: 'gm', peakUnit: '°/s'
+  };
+}
+
+const PAD = { L: 52, R: 14, T: 26, B: 28 };
+function drawChart(cv, data, o) {
+  const dpr = o.fixed ? 1 : (window.devicePixelRatio || 1);
+  const W = o.fixed ? cv.width : cv.clientWidth;
+  const H = o.fixed ? cv.height : cv.clientHeight;
+  if (!W || !H) return;
+  if (!o.fixed) {
+    const pw = Math.round(W * dpr), ph = Math.round(H * dpr);
+    if (cv.width !== pw || cv.height !== ph) { cv.width = pw; cv.height = ph; }
+  }
+  const c = cv.getContext('2d');
+  c.setTransform(dpr, 0, 0, dpr, 0, 0);
+  c.fillStyle = '#fff';
+  c.fillRect(0, 0, W, H);
+  const L = PAD.L, R = PAD.R, T = PAD.T, B = PAD.B;
+  const pw = W - L - R, ph = H - T - B;
+  let ymin = o.yMinDef, ymax = o.yMaxDef;
+  for (const s of o.series) {
+    for (const p of data) {
+      const v = p[s.key];
+      if (v === undefined) continue;
+      if (v < ymin) ymin = v;
+      if (v > ymax) ymax = v;
+    }
+  }
+  const pad = (ymax - ymin) * 0.08 || 0.1;
+  ymax += pad;
+  if (ymin < 0) ymin -= pad;
+  const X = t => L + (t - o.x0) / (o.x1 - o.x0) * pw;
+  const Y = v => T + (ymax - v) / (ymax - ymin) * ph;
+
+  if (o.sel) {
+    const a = Math.min(o.sel.a, o.sel.b), b = Math.max(o.sel.a, o.sel.b);
+    c.fillStyle = 'rgba(37,99,235,0.12)';
+    c.fillRect(X(a), T, X(b) - X(a), ph);
+  }
+  c.font = '11px Pretendard, Malgun Gothic, sans-serif';
+  c.lineWidth = 1;
+  for (let i = 0; i <= 5; i++) {
+    const v = ymin + (ymax - ymin) * i / 5;
+    const y = Y(v);
+    c.strokeStyle = '#eef0f3';
+    c.beginPath(); c.moveTo(L, y); c.lineTo(L + pw, y); c.stroke();
+    c.fillStyle = '#6b7280';
+    c.textAlign = 'right';
+    c.fillText(v.toFixed((ymax - ymin) < 6 ? 2 : 0), L - 5, y + 4);
+  }
+  for (let s = 0; s <= 10; s++) {
+    const tx = o.x0 + s * 1000;
+    if (tx > o.x1) break;
+    const x = X(tx);
+    c.strokeStyle = '#eef0f3';
+    c.beginPath(); c.moveTo(x, T); c.lineTo(x, T + ph); c.stroke();
+    c.fillStyle = '#6b7280';
+    c.textAlign = 'center';
+    c.fillText(s + '초', x, T + ph + 16);
+  }
+  c.strokeStyle = '#d1d5db';
+  c.strokeRect(L, T, pw, ph);
+  if (o.hline && o.hline.v < ymax) {
+    const y = Y(o.hline.v);
+    c.save();
+    c.setLineDash([5, 4]);
+    c.strokeStyle = '#dc2626';
+    c.beginPath(); c.moveTo(L, y); c.lineTo(L + pw, y); c.stroke();
+    c.restore();
+    c.fillStyle = '#dc2626';
+    c.textAlign = 'right';
+    c.fillText(o.hline.label, L + pw - 4, y - 4);
+  }
+  c.save();
+  c.beginPath(); c.rect(L, T, pw, ph); c.clip();
+  for (const s of o.series) {
+    c.strokeStyle = s.color;
+    c.lineWidth = s.w || 1.2;
+    c.lineJoin = 'round';
+    c.beginPath();
+    let first = true;
+    for (const p of data) {
+      const v = p[s.key];
+      if (v === undefined) continue;
+      const x = X(p.t), y = Y(v);
+      if (first) { c.moveTo(x, y); first = false; } else c.lineTo(x, y);
+    }
+    c.stroke();
+  }
+  c.restore();
+  if (o.showPeak && data.length) {
+    let best = null;
+    for (const p of data) { if (p[o.peakKey] !== undefined && (!best || p[o.peakKey] > best[o.peakKey])) best = p; }
+    if (best) {
+      const x = X(best.t), y = Y(best[o.peakKey]);
+      c.fillStyle = '#dc2626';
+      c.beginPath(); c.arc(x, y, 4.5, 0, Math.PI * 2); c.fill();
+      c.font = 'bold 11px Pretendard, Malgun Gothic, sans-serif';
+      c.textAlign = x > L + pw - 90 ? 'right' : 'left';
+      c.fillText('최고 ' + best[o.peakKey].toFixed(o.peakUnit === 'g' ? 2 : 0) + o.peakUnit, x + (c.textAlign === 'right' ? -7 : 7), Math.max(T + 10, y - 6));
+    }
+  }
+  c.font = 'bold 12px Pretendard, Malgun Gothic, sans-serif';
+  c.textAlign = 'left';
+  c.fillStyle = '#374151';
+  c.fillText(o.yLabel, L, 16);
+  let lx = L + pw;
+  c.font = '11px Pretendard, Malgun Gothic, sans-serif';
+  c.textAlign = 'right';
+  for (let i = o.series.length - 1; i >= 0; i--) {
+    const s = o.series[i];
+    c.fillStyle = '#374151';
+    c.fillText(s.label, lx, 16);
+    lx -= c.measureText(s.label).width + 4;
+    c.fillStyle = s.color;
+    c.fillRect(lx - 10, 8, 10, 10);
+    lx -= 22;
+  }
+}
+
+function currentChartData() {
+  if (S.measuring) return { data: S.rec, mode: 'rec' };
+  if (S.result) return { data: S.result.data, mode: 'res' };
+  if (S.live.length) {
+    const tEnd = S.live[S.live.length - 1].t;
+    const off = tEnd - DURATION;
+    return { data: S.live.map(p => Object.assign({}, p, { t: p.t - off })), mode: 'live' };
+  }
+  return { data: [], mode: 'live' };
+}
+
+function render() {
+  const cd = currentChartData();
+  const axes = $('showAxes').checked;
+  const base = { x0: 0, x1: DURATION, sel: cd.mode === 'res' ? S.sel : null, showPeak: cd.mode !== 'live' };
+  drawChart($('cvAcc'), cd.data, Object.assign({}, chartCfg('acc', axes), base));
+  drawChart($('cvGyro'), cd.data, Object.assign({}, chartCfg('gyro', axes), base));
+  if (cd.mode === 'live') { $('chartMode').textContent = '실시간 미리보기 (최근 10초)'; $('chartMode').className = 'mode'; }
+  else if (cd.mode === 'rec') { $('chartMode').textContent = '측정 중'; $('chartMode').className = 'mode rec'; }
+
+  if (S.last) {
+    const s = S.last;
+    $('vAx').textContent = s.ax.toFixed(2);
+    $('vAy').textContent = s.ay.toFixed(2);
+    $('vAz').textContent = s.az.toFixed(2);
+    $('vGx').textContent = s.gx.toFixed(0);
+    $('vGy').textContent = s.gy.toFixed(0);
+    $('vGz').textContent = s.gz.toFixed(0);
+    $('vDyn').textContent = s.dyn.toFixed(3);
+    $('vGm').textContent = s.gm.toFixed(0);
+  }
+  let el = 0;
+  if (S.measuring) {
+    el = S.rec.length ? S.rec[S.rec.length - 1].t : 0;
+    if (performance.now() - S.hostStart > DURATION + 3000) {
+      log('데이터 수신이 지연되어 측정을 마칩니다.', 'w');
+      finishMeasure(true);
+    }
+  } else if (S.result) {
+    el = S.result.rec.stats.dur * 1000;
+  }
+  const remain = Math.max(0, DURATION - el) / 1000;
+  $('timer').innerHTML = (S.measuring ? remain.toFixed(1) : (S.result ? '완료' : '10.0')) + '<small> ' + (S.measuring || !S.result ? '초' : '') + '</small>';
+  $('progBar').style.width = (S.measuring || S.result ? Math.min(100, el / DURATION * 100) : 0) + '%';
+}
+
+function loop() {
+  if (S.dirty || S.measuring) { render(); S.dirty = false; }
+  requestAnimationFrame(loop);
+}
+
+/* 드래그 구간 선택 */
+function attachSelect(cv) {
+  const tAt = e => {
+    const rc = cv.getBoundingClientRect();
+    const pw = rc.width - PAD.L - PAD.R;
+    const t = (e.clientX - rc.left - PAD.L) / pw * DURATION;
+    return Math.max(0, Math.min(DURATION, t));
+  };
+  cv.addEventListener('pointerdown', e => {
+    if (!S.result || S.measuring) return;
+    cv.setPointerCapture(e.pointerId);
+    const t = tAt(e);
+    S.drag = true;
+    S.sel = { a: t, b: t };
+    S.dirty = true;
+  });
+  cv.addEventListener('pointermove', e => {
+    if (!S.drag || !S.sel) return;
+    S.sel.b = tAt(e);
+    S.dirty = true;
+  });
+  const end = () => {
+    if (!S.drag) return;
+    S.drag = false;
+    if (S.sel && Math.abs(S.sel.b - S.sel.a) < 150) S.sel = null;
+    renderRange();
+    S.dirty = true;
+  };
+  cv.addEventListener('pointerup', end);
+  cv.addEventListener('pointercancel', end);
+}
+
+/* ---------------- 기록 / 순위 ---------------- */
+function loadRecords() {
+  try { S.records = JSON.parse(localStorage.getItem(STORE_KEY)) || []; } catch (e) { S.records = []; }
+}
+function saveRecords() {
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify(S.records));
+  } catch (e) {
+    alert('저장 공간이 부족합니다. 오래된 기록을 CSV로 저장한 뒤 삭제해 주세요.');
+  }
+  updateNameList();
+}
+function updateNameList() {
+  const names = [...new Set(S.records.map(r => r.name))];
+  $('nameList').innerHTML = names.map(n => '<option value="' + esc(n) + '">').join('');
+}
+function stuKey(r) { return (r.cls || '') + '|' + (r.num || '') + '|' + r.name; }
+
+function computeRanking(filter) {
+  const map = new Map();
+  for (const r of S.records) {
+    if (filter && !(r.cls || '').includes(filter)) continue;
+    const key = stuKey(r);
+    let g = map.get(key);
+    if (!g) { g = { key: key, name: r.name, cls: r.cls, num: r.num, best: null, tries: 0, bestMom: 0 }; map.set(key, g); }
+    g.tries++;
+    if (!g.best || r.stats.peakScore > g.best.stats.peakScore) g.best = r;
+    g.bestMom = Math.max(g.bestMom, r.stats.mom);
+  }
+  const arr = [...map.values()].sort((a, b) => (b.best.stats.peakScore - a.best.stats.peakScore) || (b.bestMom - a.bestMom));
+  let rank = 0, prev = null;
+  arr.forEach((g, i) => {
+    const sig = g.best.stats.peakScore + '|' + g.bestMom;
+    if (sig !== prev) { rank = i + 1; prev = sig; }
+    g.rank = rank;
+  });
+  return arr;
+}
+function rankOf(rec) {
+  const arr = computeRanking('');
+  const g = arr.find(x => x.key === stuKey(rec));
+  return g ? { rank: g.rank, total: arr.length, best: g.best.stats.peakScore } : null;
+}
+function fmtDate(iso) {
+  const d = new Date(iso);
+  const z = n => String(n).padStart(2, '0');
+  return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+}
+
+function renderRanking() {
+  const f = $('rankFilter').value.trim();
+  const arr = computeRanking(f);
+  const maxS = Math.max(1, ...arr.map(g => g.best.stats.peakScore));
+  let h = '<tr><th>순위</th><th>학년-반</th><th class="n">번호</th><th>이름</th><th class="n">최고 움직임 점수</th><th style="width:20%"></th><th class="n">최고 운동량</th><th class="n">최고 회전(°/s)</th><th class="n">측정 횟수</th><th>최고 기록 일시</th><th></th></tr>';
+  if (!arr.length) h += '<tr><td colspan="11" class="muted">아직 기록이 없습니다.</td></tr>';
+  for (const g of arr) {
+    const s = g.best.stats;
+    h += '<tr class="' + (g.rank <= 3 ? 'rank' + g.rank : '') + '"><td><span class="rk' + (g.rank <= 3 ? ' r' + g.rank : '') + '">' + g.rank + '위</span></td><td>' + esc(g.cls) + '</td><td class="n">' + esc(g.num) +
+      '</td><td><b>' + esc(g.name) + '</b></td><td class="n"><b>' + s.peakScore + '</b></td><td><div class="sbar" style="width:' + (s.peakScore / maxS * 100) + '%"></div></td><td class="n">' + g.bestMom.toFixed(1) +
+      '</td><td class="n">' + s.gPeak.toFixed(0) + '</td><td class="n">' + g.tries + '</td><td>' + fmtDate(g.best.date) + '</td><td><button class="sm" data-rep="' + g.best.id + '">분석표</button></td></tr>';
+  }
+  $('rankTable').innerHTML = h;
+
+  const recs = S.records.slice().reverse();
+  let h2 = '<tr><th>일시</th><th>학년-반</th><th class="n">번호</th><th>이름</th><th class="n">최고 점수</th><th class="n">운동량</th><th class="n">평균(g)</th><th class="n">동작</th><th class="n">시간(초)</th><th>비고</th><th></th></tr>';
+  if (!recs.length) h2 += '<tr><td colspan="11" class="muted">기록 없음</td></tr>';
+  for (const r of recs) {
+    h2 += '<tr><td>' + fmtDate(r.date) + '</td><td>' + esc(r.cls) + '</td><td class="n">' + esc(r.num) + '</td><td>' + esc(r.name) + '</td><td class="n">' + r.stats.peakScore +
+      '</td><td class="n">' + r.stats.mom.toFixed(1) + '</td><td class="n">' + r.stats.avg.toFixed(3) + '</td><td class="n">' + r.stats.moves + '</td><td class="n">' + r.stats.dur.toFixed(1) +
+      '</td><td>' + (r.mode === 'demo' ? '체험' : '') + (r.stopped ? ' 중간종료' : '') + '</td><td class="row" style="flex-wrap:nowrap"><button class="sm" data-rep="' + r.id + '">분석표</button><button class="sm" data-del="' + r.id + '">삭제</button></td></tr>';
+  }
+  $('recTable').innerHTML = h2;
+}
+
+function downloadFile(name, text, type) {
+  const blob = new Blob([text], { type: type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+function csvCell(v) { const s = String(v == null ? '' : v); return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; }
+function exportRankCsv() {
+  const arr = computeRanking($('rankFilter').value.trim());
+  const rows = [['순위', '학년-반', '번호', '이름', '최고 움직임 점수', '최고 움직임(g)', '최고 운동량', '최고 회전(°/s)', '측정 횟수', '최고 기록 일시']];
+  for (const g of arr) { const s = g.best.stats; rows.push([g.rank, g.cls, g.num, g.name, s.peakScore, s.peak.toFixed(3), g.bestMom.toFixed(1), s.gPeak.toFixed(0), g.tries, fmtDate(g.best.date)]); }
+  downloadFile('움직임_순위_' + new Date().toISOString().slice(0, 10) + '.csv', '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n'), 'text/csv');
+}
+function exportAllCsv() {
+  const rows = [['일시', '학년-반', '번호', '이름', '최고 점수', '최고(g)', '최고 시점(초)', '운동량', '평균(g)', '최고 회전', '평균 회전', '동작 횟수', '정지%', '가벼움%', '보통%', '격렬%', '측정시간(초)', '비고']];
+  for (const r of S.records) {
+    const s = r.stats;
+    rows.push([fmtDate(r.date), r.cls, r.num, r.name, s.peakScore, s.peak.toFixed(3), (s.peakT / 1000).toFixed(2), s.mom.toFixed(1), s.avg.toFixed(3), s.gPeak.toFixed(0), s.gAvg.toFixed(0), s.moves,
+      s.lv[0].toFixed(0), s.lv[1].toFixed(0), s.lv[2].toFixed(0), s.lv[3].toFixed(0), s.dur.toFixed(1), (r.mode === 'demo' ? '체험' : '') + (r.stopped ? ' 중간종료' : '')]);
+  }
+  downloadFile('움직임_전체기록_' + new Date().toISOString().slice(0, 10) + '.csv', '\uFEFF' + rows.map(r => r.map(csvCell).join(',')).join('\r\n'), 'text/csv');
+}
+
+/* ---------------- 분석표 PDF / 인쇄 ---------------- */
+function recToData(rec) {
+  const d = rec.data;
+  return d.t.map((t, i) => ({ t: t, dyn: d.d[i], gm: d.g[i] }));
+}
+function chartImage(data, kind, sel) {
+  const cv = document.createElement('canvas');
+  cv.width = 1000;
+  cv.height = 270;
+  drawChart(cv, data, Object.assign({}, chartCfg(kind, false), { x0: 0, x1: DURATION, fixed: true, sel: sel, showPeak: true }));
+  return cv.toDataURL('image/png');
+}
+const PRINT_CSS = '@page{size:A4;margin:12mm}body{font-family:Pretendard,"Malgun Gothic",sans-serif;color:#111827;font-size:12px;margin:0}' +
+  'h1{font-size:20px;margin:0 0 4px;color:#c2410c}h2{font-size:14px;margin:14px 0 6px;border-left:4px solid #ff7a00;padding-left:6px}' +
+  'table{width:100%;border-collapse:collapse}th,td{border:1px solid #d1d5db;padding:5px 6px;text-align:left}th{background:#f3f4f6}td.n,th.n{text-align:right}' +
+  '.info td{border:1px solid #d1d5db}.kp{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.kp div{border:1px solid #d1d5db;padding:6px 8px;border-radius:6px}' +
+  '.kp b{display:block;font-size:18px}.kp span{font-size:10px;color:#6b7280}.main{background:#fff4e8;border-color:#ff7a00!important}' +
+  'img{width:100%;border:1px solid #e5e7eb;border-radius:6px}.ib{display:flex;height:18px;border-radius:4px;overflow:hidden;-webkit-print-color-adjust:exact;print-color-adjust:exact}' +
+  '.ib div{color:#fff;font-size:10px;display:flex;align-items:center;justify-content:center}.fb{border:1px solid #fdba74;background:#fff7ed;padding:8px;border-radius:6px;line-height:1.6}' +
+  '.sb{height:7px;background:#ff7a00;-webkit-print-color-adjust:exact;print-color-adjust:exact}.tool{position:sticky;top:0;background:#fff;padding:8px 0;border-bottom:1px solid #e5e7eb;margin-bottom:10px}' +
+  '.tool button{font-size:14px;padding:8px 14px;margin-right:6px;cursor:pointer}.sign{margin-top:14px;display:flex;justify-content:flex-end;gap:30px}' +
+  '*{-webkit-print-color-adjust:exact;print-color-adjust:exact}@media print{.tool{display:none}}.wrap{max-width:780px;margin:0 auto;padding:10px}.pb{page-break-inside:avoid}';
+function toolbar() {
+  return '<div class="tool"><button onclick="window.print()">PDF 저장 · 인쇄</button><button onclick="window.close()">닫기</button>' +
+    '<span style="font-size:12px;color:#6b7280">인쇄 창의 대상(프린터)에서 “PDF로 저장”을 선택하면 PDF 파일로 저장됩니다.</span></div>';
+}
+function kpHTML(r) {
+  return '<div class="kp">' +
+    '<div class="main"><span>최고 움직임 점수</span><b>' + r.peakScore + '점</b><span>' + r.peak.toFixed(2) + 'g · ' + (r.peakT / 1000).toFixed(2) + '초 지점</span></div>' +
+    '<div><span>운동량 점수</span><b>' + r.mom.toFixed(1) + '점</b><span>움직임 누적(g·초×100)</span></div>' +
+    '<div><span>평균 움직임</span><b>' + r.avg.toFixed(3) + 'g</b><span>&nbsp;</span></div>' +
+    '<div><span>최고 회전 속도</span><b>' + r.gPeak.toFixed(0) + '°/s</b><span>평균 ' + r.gAvg.toFixed(0) + '°/s</span></div>' +
+    '<div><span>동작 횟수(0.5g 이상)</span><b>' + r.moves + '회</b><span>&nbsp;</span></div>' +
+    '<div><span>측정 시간</span><b>' + r.dur.toFixed(1) + '초</b><span>' + r.n + '개 데이터 · ' + r.hz.toFixed(0) + 'Hz</span></div></div>';
+}
+function reportHTML(rec) {
+  const data = recToData(rec);
+  const r = rec.stats;
+  const isCur = S.result && S.result.rec.id === rec.id;
+  const sel = isCur && S.sel ? S.sel : null;
+  const segs = segments(data);
+  const rk = rankOf(rec);
+  const mx = Math.max(0.01, ...segs.map(s => s.r.peak));
+  let segRows = '';
+  for (const s of segs) {
+    const q = s.r;
+    const li = q.n ? q.lv.indexOf(Math.max(...q.lv)) : 0;
+    segRows += '<tr><td>' + s.k + '~' + (s.k + 1) + '초</td><td class="n">' + (q.n ? q.avg.toFixed(3) : '-') + '</td><td class="n">' + (q.n ? q.peak.toFixed(2) : '-') + '</td><td style="width:22%"><div class="sb" style="width:' + (q.peak / mx * 100) + '%"></div></td><td class="n">' +
+      (q.n ? q.gAvg.toFixed(0) : '-') + '</td><td class="n">' + q.moves + '</td><td>' + (q.n ? LV[li].n : '-') + '</td></tr>';
+  }
+  let rangeHTML = '';
+  if (sel) {
+    const a = Math.min(sel.a, sel.b), b = Math.max(sel.a, sel.b);
+    const part = data.filter(p => p.t >= a && p.t <= b);
+    if (part.length >= 3) {
+      const q = analyze(part);
+      rangeHTML = '<div class="pb"><h2>선택 구간 분석 (' + (a / 1000).toFixed(2) + '초 ~ ' + (b / 1000).toFixed(2) + '초)</h2>' + kpHTML(q) + '</div>';
+    }
+  }
+  const ib = r.lv.map((v, i) => '<div style="width:' + v + '%;background:' + LV[i].c + '">' + (v >= 8 ? LV[i].n + ' ' + v.toFixed(0) + '%' : '') + '</div>').join('');
+  return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>움직임 분석표_' + esc(rec.name) + '</title><style>' + PRINT_CSS + '</style></head><body><div class="wrap">' + toolbar() +
+    '<h1>체육 움직임 분석표</h1><div style="color:#6b7280;margin-bottom:8px">오렌지보드 + 자이로/가속도 센서(MPU6050) · 10초 움직임 측정</div>' +
+    '<table class="info"><tr><th>학년-반</th><td>' + esc(rec.cls || '-') + '</td><th>번호</th><td>' + esc(rec.num || '-') + '</td><th>이름</th><td><b>' + esc(rec.name) + '</b></td></tr>' +
+    '<tr><th>측정 일시</th><td colspan="3">' + fmtDate(rec.date) + (rec.stopped ? ' (중간 종료)' : '') + (rec.mode === 'demo' ? ' (체험 모드)' : '') + '</td><th>현재 순위</th><td>' + (rk ? rk.total + '명 중 <b>' + rk.rank + '위</b>' : '-') + '</td></tr></table>' +
+    '<h2>핵심 결과</h2>' + kpHTML(r) +
+    '<h2>움직임 그래프</h2><img src="' + chartImage(data, 'acc', sel) + '"><div style="height:6px"></div><img src="' + chartImage(data, 'gyro', sel) + '">' +
+    '<div class="pb"><h2>움직임 강도 분포</h2><div class="ib">' + ib + '</div><div style="font-size:11px;margin-top:4px">' +
+    LV.map((l, i) => l.n + ' ' + r.lv[i].toFixed(0) + '%').join(' · ') + ' &nbsp;(정지 &lt;0.1g · 가벼움 0.1~0.5g · 보통 0.5~1.0g · 격렬 ≥1.0g)</div></div>' +
+    '<div class="pb"><h2>1초 구간별 분석</h2><table><tr><th>구간</th><th class="n">평균 움직임(g)</th><th class="n">최고(g)</th><th>최고 막대</th><th class="n">평균 회전(°/s)</th><th class="n">동작</th><th>주된 강도</th></tr>' + segRows + '</table></div>' +
+    rangeHTML +
+    '<div class="pb"><h2>분석 의견</h2><div class="fb">' + esc(feedback(r)) + '</div>' +
+    '<h2>나의 생각 (학생 작성)</h2><div style="border:1px solid #d1d5db;height:70px;border-radius:6px"></div>' +
+    '<div class="sign"><span>학생 확인: ____________</span><span>지도 교사: ____________</span></div></div>' +
+    '</div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>';
+}
+function rankingHTML() {
+  const f = $('rankFilter').value.trim();
+  const arr = computeRanking(f);
+  let rows = '';
+  const maxS = Math.max(1, ...arr.map(g => g.best.stats.peakScore));
+  for (const g of arr) {
+    const s = g.best.stats;
+    rows += '<tr><td><b>' + g.rank + '위</b></td><td>' + esc(g.cls) + '</td><td class="n">' + esc(g.num) + '</td><td>' + esc(g.name) + '</td><td class="n"><b>' + s.peakScore + '</b></td><td style="width:20%"><div class="sb" style="width:' + (s.peakScore / maxS * 100) +
+      '%"></div></td><td class="n">' + g.bestMom.toFixed(1) + '</td><td class="n">' + s.gPeak.toFixed(0) + '</td><td class="n">' + g.tries + '</td></tr>';
+  }
+  return '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>움직임 순위표</title><style>' + PRINT_CSS + '</style></head><body><div class="wrap">' + toolbar() +
+    '<h1>체육 움직임 측정 순위표</h1><div style="color:#6b7280;margin-bottom:8px">' + (f ? esc(f) + '반 · ' : '전체 · ') + '출력일 ' + fmtDate(new Date().toISOString()) + ' · 학생별 최고 움직임 점수 기준</div>' +
+    '<table><tr><th>순위</th><th>학년-반</th><th class="n">번호</th><th>이름</th><th class="n">최고 점수</th><th></th><th class="n">최고 운동량</th><th class="n">최고 회전(°/s)</th><th class="n">측정 횟수</th></tr>' +
+    (rows || '<tr><td colspan="9">기록 없음</td></tr>') + '</table>' +
+    '<div style="margin-top:10px;font-size:11px;color:#6b7280">최고 움직임 점수 = 측정 중 가장 큰 움직임 크기(중력 제외 가속도, g) × 100 · 운동량 점수 = 움직임 크기의 시간 누적(g·초 × 100)</div>' +
+    '</div><script>window.onload=function(){setTimeout(function(){window.print();},400);};<\/script></body></html>';
+}
+function openPrint(html) {
+  const w = window.open('', '_blank');
+  if (!w) { alert('팝업이 차단되었습니다. 주소창 오른쪽의 팝업 차단 아이콘에서 허용해 주세요.'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+}
+
+/* ---------------- 이벤트 연결 ---------------- */
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  t.classList.add('active');
+  $(t.dataset.p).classList.add('active');
+  if (t.dataset.p === 'pRank') renderRanking();
+  S.dirty = true;
+}));
+$('btnConnect').onclick = () => connectSerial();
+$('btnQuick').onclick = quickConnect;
+$('btnDisconnect').onclick = disconnectSerial;
+$('btnDemo').onclick = () => { if (S.demo) stopDemo(); else startDemo(); };
+$('btnStart').onclick = startMeasure;
+$('btnStop').onclick = stopMeasure;
+$('btnCalib').onclick = calibrate;
+$('showAxes').onchange = () => { S.dirty = true; };
+$('btnClearSel').onclick = () => { S.sel = null; renderRange(); S.dirty = true; };
+$('btnReport').onclick = () => { if (S.result) openPrint(reportHTML(S.result.rec)); };
+$('btnReady').onclick = () => {
+  S.result = null; S.sel = null;
+  ['resultCard', 'rangeCard', 'segCard'].forEach(id => $(id).classList.add('hidden'));
+  $('modeTag').textContent = '대기'; $('modeTag').className = 'mode';
+  $('stNum').value = ''; $('stName').value = ''; $('stName').focus();
+  S.dirty = true;
+};
+$('rankFilter').oninput = renderRanking;
+$('btnPrintRank').onclick = () => openPrint(rankingHTML());
+$('btnCsvRank').onclick = exportRankCsv;
+$('btnCsvAll').onclick = exportAllCsv;
+$('btnClearAll').onclick = () => {
+  if (!S.records.length) return;
+  if (confirm('모든 측정 기록을 삭제할까요? 되돌릴 수 없습니다.')) { S.records = []; saveRecords(); renderRanking(); }
+};
+document.addEventListener('click', e => {
+  const rep = e.target.closest('[data-rep]');
+  const del = e.target.closest('[data-del]');
+  if (rep) {
+    const r = S.records.find(x => x.id === rep.dataset.rep);
+    if (r) openPrint(reportHTML(r));
+  }
+  if (del) {
+    const r = S.records.find(x => x.id === del.dataset.del);
+    if (r && confirm(r.name + ' 학생의 ' + fmtDate(r.date) + ' 기록을 삭제할까요?')) {
+      S.records = S.records.filter(x => x.id !== r.id);
+      saveRecords();
+      renderRanking();
+    }
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); if (S.measuring || S.counting) stopMeasure(); else if (!$('btnStart').disabled) startMeasure(); }
+});
+const inoText = $('inoSrc').textContent.replace(/^\s+/, '');
+$('codeView').textContent = inoText;
+$('btnCopy').onclick = async () => {
+  try { await navigator.clipboard.writeText(inoText); $('btnCopy').textContent = '복사됨'; }
+  catch (e) {
+    const ta = document.createElement('textarea'); ta.value = inoText; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    $('btnCopy').textContent = '복사됨';
+  }
+  setTimeout(() => { $('btnCopy').textContent = '코드 복사'; }, 1500);
+};
+$('btnDl').onclick = () => downloadFile('orangeboard_gyro_pe.ino', inoText, 'text/plain');
+window.addEventListener('resize', () => { S.dirty = true; });
+window.addEventListener('beforeunload', () => { if (S.port) { try { S.port.close(); } catch (e) { } } });
+attachSelect($('cvAcc'));
+attachSelect($('cvGyro'));
+
+loadRecords();
+loadCalib();
+updateNameList();
+renderRanking();
+updateConnButtons();
+refreshQuick();
+log('준비 완료. 아두이노 코드를 업로드한 뒤 [USB 연결]을 누르세요. (스페이스바 = 측정 시작/종료)');
+S.dirty = true;
+loop();
+</script>
+</body>
+</html>
